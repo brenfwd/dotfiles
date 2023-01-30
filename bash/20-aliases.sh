@@ -49,7 +49,7 @@ alias py='python3'
 
 # administation
 
-alias rm='rm -iv'
+alias rm='rm -v'
 
 alias dush='du -sh'
 alias dusha='du -sh *'

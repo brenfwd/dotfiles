@@ -11,3 +11,34 @@ if command -v pandoc >/dev/null 2>&1 && command -v xelatex >/dev/null 2>&1 && co
     cargo watch -C . -w "$1.md" -s "pandoc -f markdown+raw_tex --pdf-engine=xelatex -o \"$1.pdf\" \"$1.md\""
   }
 fi
+
+# create an array of temp dirs
+tempdirs=()
+
+function temp() {
+  local tempdir=$(mktemp -d)
+  tempdirs+=("$tempdir")
+  pushd "$tempdir" >/dev/null
+  echo "Entering temp dir: $tempdir"
+  echo 'Use `poptemp` or `keeptemp` when done.'
+}
+
+function poptemp() {
+  popd >/dev/null
+  rm -rfv "${tempdirs[-1]}"
+  unset tempdirs[-1]
+}
+
+function keeptemp() {
+  popd >/dev/null
+  echo "Keeping temp dir: ${tempdirs[-1]}"
+  mv "${tempdirs[-1]}" "$HOME"
+  unset tempdirs[-1]
+}
+
+function cleartemps() {
+  for tempdir in "${tempdirs[@]}"; do
+    rm -rfv "$tempdir"
+  done
+  tempdirs=()
+}

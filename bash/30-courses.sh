@@ -19,3 +19,9 @@ function cl() {
 function mkcourse() {
   mkdir -p ~/courses/$(echo $1$2 | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
 }
+
+function projects() {
+  olddir="$(pwd)"
+  pushd ~/projects > /dev/null
+  echo '`popd` when finished to return to' $olddir
+}
