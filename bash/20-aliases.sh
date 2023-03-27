@@ -14,8 +14,8 @@ else
 fi
 
 # if bat is installed, use it for cat
-if command -v bat >/dev/null 2>&1; then
-  alias cat='bat'
+if command -v batcat >/dev/null 2>&1; then
+  alias cat='batcat'
 fi
 
 # use colorized tree
