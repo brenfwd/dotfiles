@@ -13,6 +13,9 @@ else
   alias l='ls -CF'
 fi
 
+# untar
+alias untar='tar -xzvf'
+
 # if bat is installed, use it for cat
 if command -v batcat >/dev/null 2>&1; then
   alias cat='batcat'
