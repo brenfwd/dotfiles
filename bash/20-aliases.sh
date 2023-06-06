@@ -36,15 +36,7 @@ fi
 alias ..='cd ..'
 alias ...='cd ../..'
 
-# git aliases
-
-alias g='git'
-alias gs='git status'
-alias ga='git add -v'
-alias gaa='git add -Av'
-alias gi='git init'
-alias gc='git commit'
-alias gcm='git commit -m'
+# git aliases are now in 41-git-functions.sh
 
 # python
 
