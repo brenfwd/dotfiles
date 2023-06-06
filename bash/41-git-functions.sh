@@ -35,7 +35,7 @@ function gcq() {
 }
 
 alias gpush='git push'
-alias gcmp='gcm && gp'
-alias gcqp='gcq && git push'
-
 alias gpull='git pull'
+
+alias checkpoint='gaa && gcq && git push'
+alias gquick='gaa && gcq && git push'
