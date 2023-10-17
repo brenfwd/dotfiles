@@ -31,6 +31,11 @@ if command -v grep >/dev/null 2>&1; then
   alias grep='grep --color=auto'
 fi
 
+# disable gdb startup noise
+if command -v gdb >/dev/null 2>&1; then
+  alias gdb='gdb -q'
+fi
+
 # some convenient aliases
 
 alias ..='cd ..'
