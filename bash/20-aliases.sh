@@ -41,8 +41,6 @@ fi
 alias ..='cd ..'
 alias ...='cd ../..'
 
-# git aliases are now in 41-git-functions.sh
-
 # python
 
 alias py='python3'
@@ -50,9 +48,3 @@ alias py='python3'
 # administation
 
 alias rm='rm -v'
-
-alias dush='du -sh'
-alias dusha='du -sh *'
-alias dushd='du -sh */'
-
-alias dfh='df -h'

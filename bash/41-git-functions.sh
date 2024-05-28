@@ -5,7 +5,7 @@ alias gaa='git add -Av'
 alias gi='git init'
 alias gcm='git commit -m'
 
-# Git functions (more complex)
+# Git functions
 
 # Git commit "quick"
 function gcq() {

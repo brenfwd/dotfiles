@@ -15,9 +15,6 @@ shopt -s checkwinsize
 # use lesspipe if available
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-# set prompt
-export PS1="\[\033[38;5;243m\]\h\[$(tput sgr0)\] \[$(tput bold)\]\W\[$(tput sgr0)\]\[\033[38;5;46m\]\$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/')\[$(tput sgr0)\] \[$(tput sgr0)\]\[\033[38;5;14m\]\\$\[$(tput sgr0)\] \[$(tput sgr0)\]"
-
 # enable bash completion if available
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
@@ -30,5 +27,11 @@ fi
 # enable ~/.local/bin PATH entry
 export PATH="$HOME/.local/bin:$PATH"
 
+# enable dotfiles bin PATH entry
+export PATH="$HOME/dotfiles/bin:$PATH"
+
 # enable gpg to use current tty for git commit signing
 export GPG_TTY=$(tty)
+
+# set prompt
+export PROMPT_COMMAND='PS1=$(dotfiles-ps1)'

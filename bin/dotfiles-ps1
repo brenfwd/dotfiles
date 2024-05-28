@@ -1,0 +1,90 @@
+#!/usr/bin/env bun
+import { $, argv, env, inspect } from "bun";
+import path from "path";
+import { parseArgs } from "util";
+
+import { Chalk } from "chalk";
+import { COURSE_DIR } from "../lib/constants";
+const chalk = new Chalk({ level: 3 }); // force-enable color
+
+const { positionals } = parseArgs({
+  args: argv.slice(2),
+  options: {},
+  allowPositionals: true,
+  strict: true,
+});
+
+if (positionals.length !== 0) {
+  throw new TypeError("Expected exactly 0 positional arguments");
+}
+
+let output = "";
+function write(...args: string[]) {
+  for (const arg of args) {
+    // process.stdout.write(arg);
+    output += arg;
+  }
+}
+
+const isRoot = process.getuid?.() === 0;
+if (isRoot) {
+  write(chalk.redBright.bold("root"));
+} else {
+  write(chalk.gray(env.USER));
+}
+
+write(" ");
+
+const hostname = await $`hostname`.text().then((t) => t.trim());
+write(chalk.cyan(hostname));
+
+write(" ");
+
+const cwd = process.cwd();
+if (cwd.startsWith(COURSE_DIR)) {
+  const [dept, id, ...split] = path.relative(COURSE_DIR, cwd).split(path.sep);
+  if (dept) {
+    if (id) {
+      write(chalk.green.bold(dept.toUpperCase()), " ", chalk.green.bold(id));
+    } else {
+      write(chalk.green.italic(dept.toUpperCase()));
+    }
+  } else {
+    write(chalk.green.italic("courses"));
+  }
+  if (split.length > 0) {
+    write(" ", chalk.white(split.join(path.sep)));
+  }
+} else {
+  const cwdBasename = cwd.replace(env.HOME!, "~");
+  write(chalk.white(cwdBasename));
+}
+
+// Test if the current directory is a git repository
+let isGitRepo = false;
+try {
+  await $`git rev-parse`.quiet();
+  isGitRepo = true;
+} catch {
+  isGitRepo = false;
+}
+
+// Find the root of the git repository
+let gitRoot = "";
+if (isGitRepo) {
+  gitRoot = await $`git rev-parse --show-toplevel`.text().then((t) => t.trim());
+}
+
+if (isGitRepo && (!cwd.startsWith(COURSE_DIR) || cwd === gitRoot)) {
+  const branchName = await $`git branch --show-current`.text().then((t) => t.trim());
+  const isDirty = await $`git status --porcelain`.text().then((t) => t.trim().length > 0);
+  const color = isDirty ? chalk.yellow : chalk.greenBright;
+  write(color("("), color.italic(`${branchName}${isDirty ? "*" : ""}`), color(")"));
+}
+
+const char = process.getuid?.() === 0 ? chalk.redBright.bold("#") : chalk.cyan.bold("$");
+write(" ", char, " ");
+
+// console.log(inspect(output));
+
+process.stdout.write(output.replace(/\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, (escseq) => `\\[${escseq}\\]`));

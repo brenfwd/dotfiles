@@ -1,0 +1,35 @@
+#!/usr/bin/env bun
+import { argv } from "bun";
+import { parseArgs } from "util";
+import path from "path";
+import { COURSE_DIR } from "../lib/constants";
+
+const { positionals } = parseArgs({
+  args: argv.slice(2),
+  options: {},
+  allowPositionals: true,
+  strict: true,
+});
+
+if (positionals.length > 2) {
+  throw new TypeError("Expected between 0 and 2 positional arguments");
+}
+
+let [dept, id] = positionals;
+
+const slug = positionals.join("").toLowerCase();
+const match = slug.match(/^([a-z]+)(\d+)$/);
+
+if (match) {
+  [, dept, id] = match;
+}
+
+// if (!match) {
+//   throw new TypeError("Argument(s) in invalid course format");
+// }
+
+const pathComponents = [COURSE_DIR];
+if (dept) pathComponents.push(dept.toLowerCase());
+if (id) pathComponents.push(id.toLowerCase());
+
+console.log(path.join(...pathComponents));
