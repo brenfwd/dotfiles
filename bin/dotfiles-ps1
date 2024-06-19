@@ -1,10 +1,11 @@
 #!/usr/bin/env bun
-import { $, argv, env, inspect } from "bun";
+import { $, argv, env } from "bun";
+import { Chalk } from "chalk";
 import path from "path";
 import { parseArgs } from "util";
 
-import { Chalk } from "chalk";
 import { COURSE_DIR } from "../lib/constants";
+
 const chalk = new Chalk({ level: 3 }); // force-enable color
 
 const { positionals } = parseArgs({
