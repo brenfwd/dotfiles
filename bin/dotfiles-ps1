@@ -72,7 +72,12 @@ try {
 // Find the root of the git repository
 let gitRoot = "";
 if (isGitRepo) {
-  gitRoot = await $`git rev-parse --show-toplevel`.text().then((t) => t.trim());
+  try {
+    gitRoot = await $`git rev-parse --show-toplevel`.text().then((t) => t.trim());
+  } catch {
+    // Happens when inside a .git directory -- let's just say we aren't in a repo in this case
+    isGitRepo = false;
+  }
 }
 
 if (isGitRepo && (!cwd.startsWith(COURSE_DIR) || cwd === gitRoot)) {
