@@ -1,8 +1,8 @@
 # Aliases for bash
 
 # if exa is installed, use it for ls
-if command -v exa >/dev/null 2>&1; then
-  alias ls='exa --time-style=long-iso --group-directories-first'
+if command -v eza >/dev/null 2>&1; then
+  alias ls='eza --time-style=long-iso --group-directories-first'
   alias la='ls -la'
   alias ll='ls -l'
   alias l='ls'
