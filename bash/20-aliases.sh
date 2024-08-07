@@ -6,6 +6,11 @@ if command -v eza >/dev/null 2>&1; then
   alias la='ls -la'
   alias ll='ls -l'
   alias l='ls'
+elif command -v exa >/dev/null 2>&1; then
+  alias ls='exa --time-style=long-iso --group-directories-first'
+  alias la='ls -la'
+  alias ll='ls -l'
+  alias l='ls'
 else
   alias ls='ls --color=auto'
   alias la='ls -A'
