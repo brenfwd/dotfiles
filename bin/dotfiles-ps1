@@ -27,6 +27,12 @@ function write(...args: string[]) {
   }
 }
 
+// Show prefix for virtual environments
+if (env.VIRTUAL_ENV) {
+  write(chalk.bgCyanBright.black.bold(" env "));
+  write(" ");
+}
+
 const isRoot = process.getuid?.() === 0;
 if (isRoot) {
   write(chalk.redBright.bold("root"));
