@@ -1,102 +1,114 @@
-#!/usr/bin/env bun
-import { $, argv, env } from "bun";
-import { Chalk } from "chalk";
-import path from "path";
-import { parseArgs } from "util";
+#!/usr/bin/env python3
 
-import { COURSE_DIR } from "../lib/constants";
+import sys
+import os
+import re
+import subprocess
+from pathlib import Path
 
-const chalk = new Chalk({ level: 3 }); // force-enable color
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-const { positionals } = parseArgs({
-  args: argv.slice(2),
-  options: {},
-  allowPositionals: true,
-  strict: true,
-});
+from lib import Color
 
-if (positionals.length !== 0) {
-  throw new TypeError("Expected exactly 0 positional arguments");
-}
 
-let output = "";
-function write(...args: string[]) {
-  for (const arg of args) {
-    // process.stdout.write(arg);
-    output += arg;
-  }
-}
+OUTPUT = ""
 
-// Show prefix for virtual environments
-if (env.VIRTUAL_ENV) {
-  write(chalk.bgCyanBright.black.bold(" env "));
-  write(" ");
-}
+IS_ROOT = os.getuid() == 0
 
-const isRoot = process.getuid?.() === 0;
-if (isRoot) {
-  write(chalk.redBright.bold("root"));
-} else {
-  write(chalk.gray(env.USER));
-}
+COURSES_DIR = Path.home() / "courses"
 
-write(" ");
 
-const hostname = await $`hostname`.text().then((t) => t.trim());
-write(chalk.cyan(hostname));
+def write(*args: str):
+    global OUTPUT
+    for arg in args:
+        OUTPUT += arg
 
-write(" ");
 
-const cwd = process.cwd();
-if (cwd.startsWith(COURSE_DIR)) {
-  const [dept, id, ...split] = path.relative(COURSE_DIR, cwd).split(path.sep);
-  if (dept) {
-    if (id) {
-      write(chalk.green.bold(dept.toUpperCase()), " ", chalk.green.bold(id));
-    } else {
-      write(chalk.green.italic(dept.toUpperCase()));
-    }
-  } else {
-    write(chalk.green.italic("courses"));
-  }
-  if (split.length > 0) {
-    write(" ", chalk.white(split.join(path.sep)));
-  }
-} else {
-  const cwdBasename = cwd.replace(env.HOME!, "~");
-  write(chalk.white(cwdBasename));
-}
+def cwrite(arg: str, *colors: Color):
+    write(*[c.value for c in colors], arg, Color.RESET.value)
 
-// Test if the current directory is a git repository
-let isGitRepo = false;
-try {
-  await $`git rev-parse`.quiet();
-  isGitRepo = true;
-} catch {
-  isGitRepo = false;
-}
 
-// Find the root of the git repository
-let gitRoot = "";
-if (isGitRepo) {
-  try {
-    gitRoot = await $`git rev-parse --show-toplevel`.text().then((t) => t.trim());
-  } catch {
-    // Happens when inside a .git directory -- let's just say we aren't in a repo in this case
-    isGitRepo = false;
-  }
-}
+if os.getenv("VIRTUAL_ENV"):
+    cwrite(" env ", Color.BG_CYAN_BRIGHT, Color.TEXT_BLACK, Color.STYLE_BOLD)
+    write(" ")
 
-if (isGitRepo && (!cwd.startsWith(COURSE_DIR) || cwd === gitRoot)) {
-  const branchName = await $`git branch --show-current`.text().then((t) => t.trim());
-  const isDirty = await $`git status --porcelain`.text().then((t) => t.trim().length > 0);
-  const color = isDirty ? chalk.yellow : chalk.greenBright;
-  write(color("("), color.italic(`${branchName}${isDirty ? "*" : ""}`), color(")"));
-}
+if IS_ROOT:
+    write("root")
+else:
+    cwrite(os.getenv("USER") or "unknown", Color.TEXT_GRAY)
 
-const char = process.getuid?.() === 0 ? chalk.redBright.bold("#") : chalk.cyan.bold("$");
-write(" ", char, " ");
+write(" ")
 
-// console.log(inspect(output));
+hostname = subprocess.check_output("hostname").decode("utf-8").strip()
+cwrite(hostname, Color.TEXT_CYAN)
 
-process.stdout.write(output.replace(/\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, (escseq) => `\\[${escseq}\\]`));
+write(" ")
+
+cwd = Path.cwd()
+if cwd.is_relative_to(COURSES_DIR):
+    parts = cwd.relative_to(COURSES_DIR).parts
+    match len(parts):
+        case 0:
+            # courses root
+            cwrite("courses", Color.STYLE_ITALIC, Color.TEXT_GREEN)
+        case 1:
+            (dept,) = parts
+            cwrite(dept.upper(), Color.STYLE_ITALIC, Color.TEXT_GREEN)
+        case n:
+            dept, id, *relative = parts
+            cwrite(f"{dept.upper()} {id}", Color.STYLE_BOLD, Color.TEXT_GREEN)
+            if relative:
+                write(" ")
+                write("/".join(relative))
+    write(" ")
+else:
+    # cwd_basename = cwd.replace(os.getenv("HOME") or "~", "~")
+    cwd_str = str(cwd)
+    if cwd.is_relative_to(Path.home()):
+        cwd_str = "~" + cwd_str[len(str(Path.home())) :]
+    cwrite(cwd_str, Color.TEXT_WHITE)
+
+try:
+    subprocess.check_call(
+        ["git", "rev-parse"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+    is_git_repo = True
+except subprocess.CalledProcessError:
+    is_git_repo = False
+
+git_root = ""
+if is_git_repo:
+    try:
+        git_root = (
+            subprocess.check_output(["git", "rev-parse", "--show-toplevel"])
+            .decode("utf-8")
+            .strip()
+        )
+    except subprocess.CalledProcessError:
+        is_git_repo = False
+
+# TODO: courses
+if is_git_repo:
+    try:
+        branch_name = (
+            subprocess.check_output(["git", "branch", "--show-current"])
+            .decode("utf-8")
+            .strip()
+        )
+        is_dirty = (
+            len(subprocess.check_output(["git", "status", "--porcelain"]).strip()) > 0
+        )
+        color = Color.TEXT_YELLOW if is_dirty else Color.TEXT_GREEN_BRIGHT
+        cwrite(f"({branch_name}{'*' if is_dirty else ''})", color)
+    except subprocess.CalledProcessError:
+        cwrite("(!)", Color.TEXT_RED_BRIGHT)
+
+
+char = "#" if IS_ROOT else "$"
+color = Color.TEXT_RED_BRIGHT if IS_ROOT else Color.TEXT_CYAN
+cwrite(" " + char, color)
+
+write(" ")
+
+sys.stdout.write(OUTPUT)

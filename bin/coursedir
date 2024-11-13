@@ -1,35 +1,29 @@
-#!/usr/bin/env bun
-import { argv } from "bun";
-import { parseArgs } from "util";
-import path from "path";
-import { COURSE_DIR } from "../lib/constants";
+#!/usr/bin/env python3
 
-const { positionals } = parseArgs({
-  args: argv.slice(2),
-  options: {},
-  allowPositionals: true,
-  strict: true,
-});
+import sys
+import os
+import re
+from pathlib import Path
 
-if (positionals.length > 2) {
-  throw new TypeError("Expected between 0 and 2 positional arguments");
-}
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-let [dept, id] = positionals;
+COURSES_DIR = Path.home() / "courses"
 
-const slug = positionals.join("").toLowerCase();
-const match = slug.match(/^([a-z]+)(\d+)$/);
+match len(sys.argv):
+    case 1:
+        print(str(COURSES_DIR))
+        sys.exit(0)
+    case 2:
+        print(str(COURSES_DIR / sys.argv[1]))
+    case 3:
+        s = "".join(sys.argv[1:])
+        m = re.match(r"([a-z]+)(\d+)", s.lower())
+        if not m:
+            print(f"coursedir: invalid format: {s!r}", file=sys.stderr)
+            sys.exit(1)
 
-if (match) {
-  [, dept, id] = match;
-}
-
-// if (!match) {
-//   throw new TypeError("Argument(s) in invalid course format");
-// }
-
-const pathComponents = [COURSE_DIR];
-if (dept) pathComponents.push(dept.toLowerCase());
-if (id) pathComponents.push(id.toLowerCase());
-
-console.log(path.join(...pathComponents));
+        print(str(COURSES_DIR / m.group(1) / m.group(2)))
+    case n:
+        print(f"coursedir: too many arguments ({n})", file=sys.stderr)
+        sys.exit(1)

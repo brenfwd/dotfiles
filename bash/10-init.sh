@@ -34,4 +34,4 @@ export PATH="$HOME/dotfiles/bin:$PATH"
 export GPG_TTY=$(tty)
 
 # set prompt
-export PROMPT_COMMAND='PS1=$(dotfiles-ps1-v2)'
+export PROMPT_COMMAND='PS1=$(dotfiles-ps1)'
