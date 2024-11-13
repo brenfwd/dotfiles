@@ -1,104 +1,90 @@
-#!/usr/bin/env bun
-import { $, argv } from "bun";
-import { parseArgs } from "util";
-import { statSync } from "fs";
+#!/usr/bin/env python3
 
-import chalk from "chalk";
-import convert from "color-convert";
+import sys
+import os
+from pathlib import Path
 
-import { COURSE_DIR } from "../lib/constants";
-import { zip } from "../lib/utils";
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-function randomStringColor(str: string, stringToColor: string | null = null): string {
-  function djb2(str: string): number {
-    let hash = 5381;
-    for (let i = 0; i < str.length; i++) {
-      if (hash * 33 > Number.MAX_SAFE_INTEGER) {
-        hash = hash & 0xffffff;
-      }
-      hash = (hash * 33) ^ str.charCodeAt(i);
-    }
-    return hash >>> 0;
-  }
+from lib import Color
 
-  const palette: string[] = [];
-  const N = 32;
-  for (let i = 0; i < N; i++) {
-    const hue = (i * 360) / N;
-    const lightness = 50;
-    const saturation = 80;
-    palette.push(convert.hsl.hex([hue, saturation, lightness]));
-  }
-  const color = palette[djb2(str) % palette.length];
+COURSES_DIR = Path.home() / "courses"
 
-  return chalk.hex(color)(stringToColor ?? str);
-}
 
-function colorForDigit(digit: string) {
-  switch (digit) {
-    case "0":
-      return chalk.gray;
-    case "1":
-      return chalk.blue;
-    case "2":
-      return chalk.green;
-    case "3":
-      return chalk.yellow;
-    case "4":
-      return chalk.red;
-    case "5":
-      return chalk.redBright;
-    default:
-      return chalk;
-  }
-}
+def random_string_color(s: str, target: str | None = None) -> str:
+    def djb2(s: str) -> int:
+        hash = 5381
+        for i in range(len(s)):
+            if hash * 33 > 2**31:
+                hash = hash & 0xFFFFFF
+            hash = (hash * 33) ^ ord(s[i])
+        return hash
 
-const { values, positionals } = parseArgs({
-  args: argv.slice(2),
-  options: {
-    raw: {
-      type: "boolean",
-      default: false,
-      short: "r",
-    },
-  },
-  allowPositionals: true,
-  strict: true,
-});
+    def hsl_to_rgb(h, s, l):
+        c = (1 - abs(2 * l / 100 - 1)) * s / 100
+        x = c * (1 - abs(h / 60 % 2 - 1))
+        m = l / 100 - c / 2
+        r, g, b = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x)][
+            int(h / 60)
+        ]
+        return round((r + m) * 255), round((g + m) * 255), round((b + m) * 255)
 
-if (positionals.length !== 0) {
-  throw new TypeError("Expected no arguments");
-}
+    def rgb_to_ansi(r, g, b):
+        return f"\033[38;2;{r};{g};{b}m"
 
-async function ls(dir: string): Promise<string[]> {
-  return $`ls ${dir}`.quiet().then((r) => r.text().split("\n").filter(Boolean));
-}
+    palette: list[tuple[int, int, int]] = []
+    N = 32
+    for i in range(N):
+        hue = i * 360 / N
+        saturation = 65
+        lightness = 50
+        palette.append(hsl_to_rgb(hue, saturation, lightness))
+    color = palette[djb2(s) % len(palette)]
+    return rgb_to_ansi(*color) + (target or s) + Color.RESET.value
 
-const depts = await ls(COURSE_DIR);
-const courses = await Promise.all(
-  depts
-    .filter((dept) => statSync(`${COURSE_DIR}/${dept}`).isDirectory())
-    .map((dept) =>
-      ls(`${COURSE_DIR}/${dept}`) //
-        .then((ids) => ids.map((id) => ({ Dept: dept.toUpperCase(), ID: id })))
-    )
-).then((c) => c.flat());
 
-courses.sort((a, b) => a.Dept.localeCompare(b.Dept) || a.ID.localeCompare(b.ID));
+def color_for_digit(d: str) -> Color:
+    colors = [
+        Color.TEXT_GRAY,
+        Color.TEXT_BLUE,
+        Color.TEXT_GREEN,
+        Color.TEXT_YELLOW,
+        Color.TEXT_RED,
+        Color.TEXT_RED_BRIGHT,
+    ]
+    try:
+        n = int(d)
+        return colors[n] if n >= 0 and n < len(colors) else Color.NONE
+    except ValueError:
+        return Color.NONE
 
-if (values.raw) {
-  for (const course of courses) {
-    console.log(`${course.Dept} ${course.ID}`);
-  }
-} else {
-  const maxDept = Math.max(...courses.map((c) => c.Dept.length));
-  const maxID = Math.max(...courses.map((c) => c.ID.length));
-  const colorized = courses.map((c) => ({ Dept: randomStringColor(c.Dept), ID: colorForDigit(c.ID[0])(c.ID) }));
-  console.log(`${"Dept".padStart(maxDept)} ${"ID".padStart(maxID)}`);
-  console.log(`${"-".repeat(maxDept)} ${"-".repeat(maxID)}`);
-  for (const [plain, color] of zip(courses, colorized)) {
-    const deptPad = " ".repeat(maxDept - plain.Dept.length);
-    const idPad = " ".repeat(maxID - plain.ID.length);
-    console.log(`${deptPad}${color.Dept} ${idPad}${color.ID}`);
-  }
-}
+
+def iterlast(it):
+    it = iter(it)
+    try:
+        n = next(it)
+    except StopIteration:
+        return
+    for x in it:
+        t = n
+        n = x
+        yield False, t
+    yield True, n
+
+
+for dept in sorted(COURSES_DIR.iterdir()):
+    if dept.name.startswith(".") or not dept.is_dir():
+        continue
+    print(random_string_color(dept.name.upper()))
+    for is_last, course in iterlast(sorted(dept.iterdir())):
+        if course.name.startswith(".") or not course.is_dir():
+            continue
+        print(
+            color_for_digit(course.name[0]).value,
+            "└── " if is_last else "├── ",
+            course.name,
+            Color.RESET.value,
+            sep="",
+        )
+    print()
