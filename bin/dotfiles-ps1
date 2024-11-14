@@ -111,4 +111,7 @@ cwrite(" " + char, color)
 
 write(" ")
 
-sys.stdout.write(OUTPUT)
+escaped = re.sub(
+    r"\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])", lambda m: f"\\[{m.group(0)}\\]", OUTPUT
+)
+sys.stdout.write(escaped)
