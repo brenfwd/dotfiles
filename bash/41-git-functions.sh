@@ -4,6 +4,7 @@ alias gs='git status'
 alias gaa='git add -Av'
 alias gi='git init'
 alias gcm='git commit -m'
+alias gcb='git checkout -b'
 
 # Git functions
 

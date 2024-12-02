@@ -49,6 +49,7 @@ alias ...='cd ../..'
 # python
 
 alias py='python3'
+alias python='python3'
 
 # administation
 
