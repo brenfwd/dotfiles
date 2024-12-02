@@ -1,3 +1,6 @@
+# If the DOTFILES_SKIP_UPDATE_CHECK environment variable is set, skip this script
+[[ "$DOTFILES_SKIP_UPDATE_CHECK" ]] && return
+
 # Get path to this script
 script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
